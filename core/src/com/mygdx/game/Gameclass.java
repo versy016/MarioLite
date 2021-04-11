@@ -6,17 +6,21 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 
 public class Gameclass implements Screen {
     MyGdxGame game;
     private OrthographicCamera camera;
     private SpriteBatch batch;                   // Spritebatch for rendering
+    Sprite playerSprite;
+
     Stage stage;
     private Texture walkSheet;                  // Texture to hold the spritesheet
     private TextureRegion[] walkFrames;         // Texture array for the frames
@@ -26,6 +30,9 @@ public class Gameclass implements Screen {
 
     int characterX ;
     int characterY ;
+    public static final float MOVEMENT_SPEED = 200.0f;
+    float dt;
+    Vector2 playerDelta;
 
     TiledMap tiledMap;
     OrthogonalTiledMapRenderer tiledMapRenderer;
@@ -59,9 +66,10 @@ public class Gameclass implements Screen {
 
         // Initialise the stateTime, aka how long the program has been running for.
         stateTime = 0.0f;
+        playerDelta = new Vector2();
 
         batch = new SpriteBatch();
-
+        playerSprite = new Sprite();
         characterX = 1;
         characterY = 1;
 
@@ -75,11 +83,19 @@ public class Gameclass implements Screen {
         camera = new OrthographicCamera();
         camera.setToOrtho(false, w , h  );
 
-        camera.translate(characterX * 32, characterY * 32);
         stage = new Stage();
+        currentFrame = (TextureRegion)walkAnimation.getKeyFrame(stateTime, true);
+        playerSprite = new Sprite(currentFrame);
 
         Gdx.input.setInputProcessor(stage);
 
+    }
+    private void update() {
+        playerDelta.x =  MOVEMENT_SPEED * dt;
+        playerDelta.y = 0;
+
+        playerSprite.translateX(playerDelta.x);
+        camera.position.x += MOVEMENT_SPEED*dt;
     }
 
     @Override
@@ -90,6 +106,8 @@ public class Gameclass implements Screen {
 
     @Override
     public void render(float delta) {
+        dt = Gdx.graphics.getDeltaTime();
+        update();
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA); //Allows transparent sprites/tiles
@@ -102,13 +120,16 @@ public class Gameclass implements Screen {
 
         // Grabe the current frame from the animation.
         currentFrame = (TextureRegion)walkAnimation.getKeyFrame(stateTime, true);
+
+
         tiledMapRenderer.setView(camera);
         tiledMapRenderer.render();
-
         batch.setProjectionMatrix(camera.combined);
-        batch.begin();
-        batch.draw(currentFrame, 60,400);
 
+        batch.begin();
+        //batch.draw(currentFrame, 60,400);`
+        //playerSprite.draw(batch);
+        batch.draw(currentFrame,playerSprite.getX(),400);
         batch.end();
     }
 
