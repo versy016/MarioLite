@@ -8,6 +8,9 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.maps.tiled.TmxMapLoader;
+import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 
 public class Gameclass implements Screen {
@@ -20,6 +23,12 @@ public class Gameclass implements Screen {
     private Animation walkAnimation; // Animation object for the sprite
     private TextureRegion currentFrame;         // The current frame to display
     private float stateTime;                    // The time that the program has been running
+
+    int characterX ;
+    int characterY ;
+
+    TiledMap tiledMap;
+    OrthogonalTiledMapRenderer tiledMapRenderer;
 
     public Gameclass(MyGdxGame game) {
         this.game = game;
@@ -53,13 +62,20 @@ public class Gameclass implements Screen {
 
         batch = new SpriteBatch();
 
+        characterX = 1;
+        characterY = 1;
+
+        //map
+        tiledMap = new TmxMapLoader().load("Starting Assets/assets/level1.tmx");
+        tiledMapRenderer = new OrthogonalTiledMapRenderer(tiledMap);
+
+        //Camera
         float w = Gdx.graphics.getWidth();
         float h = Gdx.graphics.getHeight();
+        camera = new OrthographicCamera();
+        camera.setToOrtho(false, w , h  );
 
-        camera = new OrthographicCamera(w, h);
-
-        batch.setProjectionMatrix(camera.combined);
-
+        camera.translate(characterX * 32, characterY * 32);
         stage = new Stage();
 
         Gdx.input.setInputProcessor(stage);
@@ -75,15 +91,25 @@ public class Gameclass implements Screen {
     @Override
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA); //Allows transparent sprites/tiles
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        camera.update();
+
         // Increase the time the game has been running by adding deltaTime (the time since the
         // last update).
         stateTime += Gdx.graphics.getDeltaTime();
 
         // Grabe the current frame from the animation.
         currentFrame = (TextureRegion)walkAnimation.getKeyFrame(stateTime, true);
-        stage.getBatch().begin();
-        stage.getBatch().draw(currentFrame, 50,50);
-        stage.getBatch().end();
+        tiledMapRenderer.setView(camera);
+        tiledMapRenderer.render();
+
+        batch.setProjectionMatrix(camera.combined);
+        batch.begin();
+        batch.draw(currentFrame, 60,400);
+
+        batch.end();
     }
 
     @Override
@@ -109,5 +135,7 @@ public class Gameclass implements Screen {
     @Override
     public void dispose() {
         batch.dispose();
+        tiledMap.dispose();
+
     }
 }
