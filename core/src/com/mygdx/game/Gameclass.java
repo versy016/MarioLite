@@ -13,6 +13,7 @@ import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 
 public class Gameclass implements Screen {
@@ -30,12 +31,16 @@ public class Gameclass implements Screen {
 
     int characterX ;
     int characterY ;
-    public static final float MOVEMENT_SPEED = 200.0f;
+    public static final float MOVEMENT_SPEED = 300.0f;
     float dt;
     Vector2 playerDelta;
+    public static final int gravity = -15;
+    Vector3  velocity;
+    Vector3 postion;
 
     TiledMap tiledMap;
     OrthogonalTiledMapRenderer tiledMapRenderer;
+
 
     public Gameclass(MyGdxGame game) {
         this.game = game;
@@ -83,19 +88,37 @@ public class Gameclass implements Screen {
         camera = new OrthographicCamera();
         camera.setToOrtho(false, w , h  );
 
+        velocity = new Vector3(0,0,0);
+        postion = new Vector3(0,400,0);
+
         stage = new Stage();
         currentFrame = (TextureRegion)walkAnimation.getKeyFrame(stateTime, true);
         playerSprite = new Sprite(currentFrame);
-
+        playerSprite.translateY(400);
         Gdx.input.setInputProcessor(stage);
 
     }
     private void update() {
         playerDelta.x =  MOVEMENT_SPEED * dt;
-        playerDelta.y = 0;
 
         playerSprite.translateX(playerDelta.x);
         camera.position.x += MOVEMENT_SPEED*dt;
+        if(postion.y > 400){
+            velocity.add(0,gravity,0);
+        }
+
+        velocity.scl(dt);
+        postion.add(0,velocity.y,0);
+        velocity.scl(1/dt);
+        playerSprite.setY(postion.y);
+        if(postion.y < 400){
+           postion.y = 400;
+        }
+
+        if(Gdx.input.justTouched()){
+           velocity.y = 550;
+        }
+
     }
 
     @Override
@@ -127,11 +150,11 @@ public class Gameclass implements Screen {
         batch.setProjectionMatrix(camera.combined);
 
         batch.begin();
-        //batch.draw(currentFrame, 60,400);`
-        //playerSprite.draw(batch);
-        batch.draw(currentFrame,playerSprite.getX(),400);
+
+        batch.draw(currentFrame,playerSprite.getX(),playerSprite.getY());
         batch.end();
     }
+
 
     @Override
     public void resize(int width, int height) {
