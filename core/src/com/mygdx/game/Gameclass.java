@@ -21,8 +21,10 @@ import com.badlogic.gdx.utils.Timer;
 public class Gameclass implements Screen {
     MyGdxGame game;
     private Animation JumpAnimationend;
+    private boolean letslide = false;
 
-    public enum State{Sliding, Jumping, Running,Jumpend}
+    public enum State{Sliding, Jumping, Running,Jumpend, Slidend;
+    }
     public State currentstate;
 
     private OrthographicCamera camera;
@@ -41,11 +43,13 @@ public class Gameclass implements Screen {
     private TextureRegion[] RunFrames;         // Texture array for the frames
     private TextureRegion[] Jumpframes;
     private TextureRegion[] Slideframes;
+    private TextureRegion[] Slideframesend;
 
     private TextureRegion[][] temp;
     private Animation RunningAnimation; // Animation for running
     private Animation JumpAnimation; // Animation for Jumping
     private Animation SlideAnimation; // Animation for sliding
+    private Animation SlideAnimationend; // Animation for sliding
 
     private TextureRegion currentframe;         // The current frame to display
 
@@ -114,12 +118,30 @@ public class Gameclass implements Screen {
         }
 
         temp = TextureRegion.split(slidingsheet, slidingsheet.getWidth()/2,slidingsheet.getHeight()/1);
+        Slideframes = new TextureRegion[2];
+        index = 0;
+        for (int i = 0; i < 1; i++) {
+            for (int j = 0; j < 2; j++) {
+                Slideframes[index++] = temp[i][j];
+            }
+        }
+        temp = TextureRegion.split(slidingendsheet, slidingendsheet.getWidth()/1,slidingendsheet.getHeight()/1);
+        Slideframesend = new TextureRegion[1];
+        index = 0;
+        for (int i = 0; i < 1; i++) {
+            for (int j = 0; j < 1; j++) {
+                Slideframesend[index++] = temp[i][j];
+            }
+        }
 
         // Drop the TextureRegions into a new Animation object and set the framerate. As the
         // duration is set to 0.033, we will get 30 frames per second.
         RunningAnimation = new Animation(0.1f, RunFrames);
         JumpAnimation = new Animation(0.15f, Jumpframes);
         JumpAnimationend =  new Animation( 0.03f,JumpFrames1);
+        SlideAnimation = new Animation(0.33f, Slideframes);
+        SlideAnimationend = new Animation(0.1f, Slideframesend);
+
         // Initialise the stateTime, aka how long the program has been running for.
         stateTime = 0.0f;
 
@@ -169,17 +191,19 @@ public class Gameclass implements Screen {
         {
             velocity.add(0,gravity,0);
             Timer.schedule(new Timer.Task() { @Override public void run() {  currentstate = State.Jumpend; } },0.15f);
-//
         }
         if(postion.y <= 400){
             currentstate = State.Running;
             postion.y = 400;
         }
+        if(letslide){
+            currentstate = State.Sliding;
+            Timer.schedule(new Timer.Task() { @Override public void run() {  currentstate = State.Slidend; } },0.33f);
 
-//        if(postion.y < 400){
-//            currentstate = State.Sliding;
-//
-//        }
+            Timer.schedule(new Timer.Task() { @Override public void run() {  letslide = false; } },0.33f);
+
+        }
+
         if(Gdx.input.justTouched()){
             if (Gdx.input.getY() < Gdx.graphics.getHeight() / 2){
                 velocity.y = 450;
@@ -187,10 +211,9 @@ public class Gameclass implements Screen {
                 currentstate = State.Jumping;
                 jumped = true;
             }
-            else{
-                currentstate = State.Sliding;
+            else {
+                letslide = true;
             }
-
         }
 
     }
@@ -202,12 +225,16 @@ public class Gameclass implements Screen {
         if(currentstate == State.Jumping){
             currentframe = (TextureRegion) JumpAnimation.getKeyFrame(stateTime, false);
         }
-        if(currentstate == State.Sliding){
-            currentframe = (TextureRegion) RunningAnimation.getKeyFrame(stateTime, true);
-        }
         if(currentstate == State.Jumpend){
-            currentframe = (TextureRegion) JumpAnimationend.getKeyFrame(stateTime, true);
+            currentframe = (TextureRegion) JumpAnimationend.getKeyFrame(stateTime, false);
         }
+        if(currentstate == State.Sliding){
+            currentframe = (TextureRegion) SlideAnimation.getKeyFrame(stateTime, false);
+        }
+        if(currentstate == State.Slidend){
+            currentframe = (TextureRegion) SlideAnimationend.getKeyFrame(stateTime, false);
+        }
+
         return currentframe;
 
     }
