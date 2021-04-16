@@ -29,14 +29,15 @@ public class Gameclass implements Screen {
 
     private OrthographicCamera camera;
     private SpriteBatch batch;                   // Spritebatch for rendering
-    Sprite playerSprite;
-
+    private Sprite playerSprite;
+    private Sprite slimesprite;
     Stage stage;
     private Texture walkSheet;                  // Texture to hold the spritesheet
     private Texture jumpsheet;
     private Texture jumpendsheet;
     private Texture slidingsheet;
     private Texture slidingendsheet;
+    private Texture slimesheet;
 
     Array<TextureRegion> JumpFrames1;
 
@@ -44,23 +45,26 @@ public class Gameclass implements Screen {
     private TextureRegion[] Jumpframes;
     private TextureRegion[] Slideframes;
     private TextureRegion[] Slideframesend;
+    private TextureRegion[] SlimeFrames;
 
     private TextureRegion[][] temp;
     private Animation RunningAnimation; // Animation for running
     private Animation JumpAnimation; // Animation for Jumping
     private Animation SlideAnimation; // Animation for sliding
     private Animation SlideAnimationend; // Animation for sliding
+    private Animation SlimeAnimation;
 
     private TextureRegion currentframe;         // The current frame to display
+    private TextureRegion slimeframe;
 
     private float stateTime;                    // The time that the program has been running
 
     int characterX ;
     int characterY ;
-    public static final float MOVEMENT_SPEED = 300.0f;
+    public static final float MOVEMENT_SPEED = 400.0f;
     float dt;
     Vector2 playerDelta;
-    public static final int gravity = -25;
+    public static final int gravity = -20;
     Vector3  velocity;
     Vector3 postion;
     boolean jumped = false;
@@ -81,6 +85,7 @@ public class Gameclass implements Screen {
         jumpendsheet = new Texture(Gdx.files.internal("Starting Assets/assets/jumping end.png"));
         slidingsheet = new Texture(Gdx.files.internal("Starting Assets/assets/sliding start.png"));
         slidingendsheet = new Texture(Gdx.files.internal("Starting Assets/assets/sliding end.png"));
+        slimesheet = new Texture(Gdx.files.internal("Starting Assets/assets/slime.png"));
 
 
         // Generate a two dimensional array of TextureRegion by splitting the spritesheet into individual regions
@@ -133,6 +138,14 @@ public class Gameclass implements Screen {
                 Slideframesend[index++] = temp[i][j];
             }
         }
+        temp = TextureRegion.split(slimesheet, slimesheet.getWidth()/2,slimesheet.getHeight()/1);
+        SlimeFrames = new TextureRegion[2];
+        index = 0;
+        for (int i = 0; i < 1; i++) {
+            for (int j = 0; j < 2; j++) {
+                SlimeFrames[index++] = temp[i][j];
+            }
+        }
 
         // Drop the TextureRegions into a new Animation object and set the framerate. As the
         // duration is set to 0.033, we will get 30 frames per second.
@@ -141,14 +154,14 @@ public class Gameclass implements Screen {
         JumpAnimationend =  new Animation( 0.03f,JumpFrames1);
         SlideAnimation = new Animation(0.33f, Slideframes);
         SlideAnimationend = new Animation(0.1f, Slideframesend);
-
+        SlimeAnimation = new Animation(0.15f, SlimeFrames);
         // Initialise the stateTime, aka how long the program has been running for.
         stateTime = 0.0f;
 
         playerDelta = new Vector2();
 
         batch = new SpriteBatch();
-        playerSprite = new Sprite();
+
         characterX = 1;
         characterY = 1;
 
@@ -167,11 +180,14 @@ public class Gameclass implements Screen {
 
         stage = new Stage();
         currentframe = (TextureRegion) RunningAnimation.getKeyFrame(stateTime, true);
+        slimeframe = (TextureRegion) SlimeAnimation.getKeyFrame(stateTime, true);
 
         currentstate = State.Running;
 
         playerSprite = new Sprite(currentframe);
+        slimesprite = new Sprite(slimeframe);
         playerSprite.translateY(400);
+        slimesprite.translateY(400);
         Gdx.input.setInputProcessor(stage);
 
     }
@@ -179,6 +195,7 @@ public class Gameclass implements Screen {
         playerDelta.x =  MOVEMENT_SPEED * dt;
 
         playerSprite.translateX(playerDelta.x);
+        slimesprite.translateX(playerDelta.x);
         camera.position.x += MOVEMENT_SPEED*dt;
 
         velocity.scl(dt);
@@ -249,7 +266,7 @@ public class Gameclass implements Screen {
     public void render(float delta) {
         dt = Gdx.graphics.getDeltaTime();
         currentframe = getcurrentstate();
-
+        slimeframe = (TextureRegion) SlimeAnimation.getKeyFrame(stateTime, true);
         update();
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         Gdx.gl.glClearColor(0, 0, 0, 1);
@@ -271,6 +288,17 @@ public class Gameclass implements Screen {
         batch.begin();
 
         batch.draw(currentframe,playerSprite.getX(),playerSprite.getY());
+        int distance =800;
+        for(int i = 0; i < 10; i++){
+
+            batch.draw(slimeframe, distance*5*(i)-slimesprite.getX(),400);
+            if(i%2==0 && i != 0)
+                batch.draw(slimeframe, distance*4*(i),400);
+
+            distance +=100;
+        }
+
+
         batch.end();
     }
 
