@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -16,10 +17,16 @@ import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Timer;
 
@@ -33,6 +40,8 @@ public class Gameclass implements Screen {
     }
     public State currentstate;
 
+    public boolean paused;
+
     private OrthographicCamera camera;
     private SpriteBatch batch;                   // Spritebatch for rendering
     private Sprite playerSprite;
@@ -45,6 +54,11 @@ public class Gameclass implements Screen {
     private Texture slidingendsheet;
     private Texture slimesheet;
     private Texture deadsheet;
+    private Texture background;
+
+    Image img;
+
+    Label label;
 
     Array<TextureRegion> JumpFrames1;
 
@@ -110,30 +124,54 @@ public class Gameclass implements Screen {
         slidingendsheet = new Texture(Gdx.files.internal("Starting Assets/assets/sliding end.png"));
         slimesheet = new Texture(Gdx.files.internal("Starting Assets/assets/slime.png"));
         deadsheet = new Texture(Gdx.files.internal("Starting Assets/assets/deading.png"));
+        background = new Texture("Starting Assets/assets/background.jpg");
+
 
         skin = new Skin(Gdx.files.internal("Starting Assets/assets/uiskin.json"));
         tryagain = new TextButton("TRY AGAIN", skin, "default");
         exit = new TextButton("EXIT", skin, "default");
         cntinue = new TextButton("CONTINUE", skin, "default");
+        pause = new TextButton("||", skin, "default");
+        label = new Label("PAUSED", new Label.LabelStyle(new BitmapFont(),com.badlogic.gdx.graphics.Color.WHITE));
+
+        label.setFontScale(5,4);
+        label.setPosition(900,850);
+        label.setVisible(false);
 
         tryagain.setWidth(600f);
         tryagain.setHeight(120f);
         tryagain.getLabel().setFontScale(5);
         tryagain.setColor(Color.GOLD);
-        tryagain.setPosition(750, 600);
+        tryagain.setPosition(750, 850);
+        tryagain.setVisible(false);
 
 
-        exit.setWidth(600f);
-        exit.setHeight(120f);
-        exit.getLabel().setFontScale(5);
+        exit.setWidth(200f);
+        exit.setHeight(100f);
+        exit.getLabel().setFontScale(4);
         exit.setColor(Color.GOLD);
-        exit.setPosition(750, 600);
+        exit.setPosition(900, 300);
+        exit.setVisible(false);
 
-        cntinue.setWidth(600f);
-        cntinue.setHeight(120f);
-        cntinue.getLabel().setFontScale(5);
+        cntinue.setWidth(400f);
+        cntinue.setHeight(100f);
+        cntinue.getLabel().setFontScale(4);
         cntinue.setColor(Color.GOLD);
-        cntinue.setPosition(750, 600);
+        cntinue.setPosition(800, 500);
+        cntinue.setVisible(false);
+
+        pause.setWidth(90f);
+        pause.setHeight(60f);
+        pause.getLabel().setFontScale(2);
+        pause.setColor(Color.GOLD);
+        pause.setPosition(1950, 950);
+
+
+        img = new Image(background);
+        img.setSize(1050,500);
+        img.setX(480);
+        img.setY(200);
+        img.setVisible(false);
 
         // Generate a two dimensional array of TextureRegion by splitting the spritesheet into individual regions
         temp = TextureRegion.split(walkSheet, walkSheet.getWidth() / 4, walkSheet.getHeight() / 2);
@@ -257,9 +295,15 @@ public class Gameclass implements Screen {
         }
 
         playerSprite.translateY(400);
+        stage.addActor(img);
+        stage.addActor(pause);
+        stage.addActor(cntinue);
+        stage.addActor(exit);
+        stage.addActor(label);
 
-
+        //stage.addActor(exitbutton);
         Gdx.input.setInputProcessor(stage);
+
 
     }
     private void update() {
@@ -268,9 +312,7 @@ public class Gameclass implements Screen {
         playerSprite.translateX(playerDelta.x);
 
         for(int i = 0; i < 15 ;i ++)
-        slimesprite[i].translateX(SlimeDelta.x);
-////
-;
+         slimesprite[i].translateX(SlimeDelta.x);
 
         camera.position.x += MOVEMENT_SPEED*dt;
 
@@ -279,7 +321,26 @@ public class Gameclass implements Screen {
         velocity.scl(1/dt);
         playerSprite.setY(postion.y);
 
+        pause.addListener(new ChangeListener() {
+            public void changed (ChangeEvent event, Actor actor) {
 
+                paused = true;
+                exit.setVisible(true);
+                cntinue.setVisible(true);
+                img.setVisible(true);
+                label.setVisible(true);
+                pause.setVisible(false);
+
+            }
+        });
+        exit.addListener(new ClickListener()
+        {
+            @Override
+            public void clicked (InputEvent event, float x, float y)
+            {
+                Gdx.app.exit();
+            }
+        });
         if(postion.y > 450)
         {
             velocity.add(0,gravity,0);
@@ -346,13 +407,30 @@ public class Gameclass implements Screen {
         dt = Gdx.graphics.getDeltaTime();
         currentframe = getcurrentstate();
         slimeframe = (TextureRegion) SlimeAnimation.getKeyFrame(stateTime, true);
-        update();
+
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA); //Allows transparent sprites/tiles
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        camera.update();
+       if(!paused) {
+           update();
 
+
+           camera.update();
+       }
+        if(paused) {
+        cntinue.addListener(new ChangeListener() {
+            public void changed (ChangeEvent event, Actor actor) {
+
+                paused = false;
+                exit.setVisible(false);
+                cntinue.setVisible(false);
+                img.setVisible(false);
+                label.setVisible(false);
+                pause.setVisible(true);
+            }
+        });
+        }
         // Increase the time the game has been running by adding deltaTime (the time since the
         // last update).
         stateTime += Gdx.graphics.getDeltaTime();
@@ -364,8 +442,8 @@ public class Gameclass implements Screen {
         tiledMapRenderer.render();
         batch.setProjectionMatrix(camera.combined);
 
+        stage.draw();
         batch.begin();
-
         batch.draw(currentframe,playerSprite.getX(),playerSprite.getY());
 
         for(int i = 0; i < 15 ;i ++) {
@@ -381,7 +459,6 @@ public class Gameclass implements Screen {
             if (playerRectangle.overlaps(slimeRectangle) )
                 currentstate = State.dead;
         }
-
         batch.end();
     }
 

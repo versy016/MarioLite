@@ -39,7 +39,7 @@ public class menuclass implements Screen {
         playbutton = new TextButton("Play", skin, "default");
         exitbutton = new TextButton("Exit", skin, "default");
 
-        Image img = new Image(background);
+        img = new Image(background);
         img.setSize(2050,1100);
 
         playbutton.setWidth(600f);
