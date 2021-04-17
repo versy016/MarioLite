@@ -2,6 +2,7 @@ package com.mygdx.game;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -12,9 +13,13 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Button;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Timer;
 
@@ -22,15 +27,16 @@ public class Gameclass implements Screen {
     MyGdxGame game;
     private Animation JumpAnimationend;
     private boolean letslide = false;
+    private Skin skin;
 
-    public enum State{Sliding, Jumping, Running,Jumpend, Slidend;
+    public enum State{Sliding, Jumping, Running,Jumpend, Slidend, dead;
     }
     public State currentstate;
 
     private OrthographicCamera camera;
     private SpriteBatch batch;                   // Spritebatch for rendering
     private Sprite playerSprite;
-    private Sprite slimesprite;
+    private Sprite[] slimesprite;
     Stage stage;
     private Texture walkSheet;                  // Texture to hold the spritesheet
     private Texture jumpsheet;
@@ -38,6 +44,7 @@ public class Gameclass implements Screen {
     private Texture slidingsheet;
     private Texture slidingendsheet;
     private Texture slimesheet;
+    private Texture deadsheet;
 
     Array<TextureRegion> JumpFrames1;
 
@@ -46,13 +53,16 @@ public class Gameclass implements Screen {
     private TextureRegion[] Slideframes;
     private TextureRegion[] Slideframesend;
     private TextureRegion[] SlimeFrames;
+    private TextureRegion[] DeadFrames;
 
     private TextureRegion[][] temp;
+
     private Animation RunningAnimation; // Animation for running
     private Animation JumpAnimation; // Animation for Jumping
     private Animation SlideAnimation; // Animation for sliding
     private Animation SlideAnimationend; // Animation for sliding
-    private Animation SlimeAnimation;
+    private Animation SlimeAnimation; // Animation for slime
+    private Animation DeadAnimation; // Animation for death
 
     private TextureRegion currentframe;         // The current frame to display
     private TextureRegion slimeframe;
@@ -62,12 +72,25 @@ public class Gameclass implements Screen {
     int characterX ;
     int characterY ;
     public static final float MOVEMENT_SPEED = 400.0f;
+    public static final float SLIME_MOVEMENT_SPEED = 300.0f;
+
     float dt;
     Vector2 playerDelta;
+    Vector2 SlimeDelta;
+
     public static final int gravity = -20;
     Vector3  velocity;
     Vector3 postion;
     boolean jumped = false;
+
+    TextButton tryagain;
+    TextButton exit;
+    TextButton pause;
+    TextButton cntinue;
+
+    Rectangle playerRectangle;
+    Rectangle slimeRectangle;
+
 
     TiledMap tiledMap;
     OrthogonalTiledMapRenderer tiledMapRenderer;
@@ -86,7 +109,31 @@ public class Gameclass implements Screen {
         slidingsheet = new Texture(Gdx.files.internal("Starting Assets/assets/sliding start.png"));
         slidingendsheet = new Texture(Gdx.files.internal("Starting Assets/assets/sliding end.png"));
         slimesheet = new Texture(Gdx.files.internal("Starting Assets/assets/slime.png"));
+        deadsheet = new Texture(Gdx.files.internal("Starting Assets/assets/deading.png"));
 
+        skin = new Skin(Gdx.files.internal("Starting Assets/assets/uiskin.json"));
+        tryagain = new TextButton("TRY AGAIN", skin, "default");
+        exit = new TextButton("EXIT", skin, "default");
+        cntinue = new TextButton("CONTINUE", skin, "default");
+
+        tryagain.setWidth(600f);
+        tryagain.setHeight(120f);
+        tryagain.getLabel().setFontScale(5);
+        tryagain.setColor(Color.GOLD);
+        tryagain.setPosition(750, 600);
+
+
+        exit.setWidth(600f);
+        exit.setHeight(120f);
+        exit.getLabel().setFontScale(5);
+        exit.setColor(Color.GOLD);
+        exit.setPosition(750, 600);
+
+        cntinue.setWidth(600f);
+        cntinue.setHeight(120f);
+        cntinue.getLabel().setFontScale(5);
+        cntinue.setColor(Color.GOLD);
+        cntinue.setPosition(750, 600);
 
         // Generate a two dimensional array of TextureRegion by splitting the spritesheet into individual regions
         temp = TextureRegion.split(walkSheet, walkSheet.getWidth() / 4, walkSheet.getHeight() / 2);
@@ -147,6 +194,15 @@ public class Gameclass implements Screen {
             }
         }
 
+        temp = TextureRegion.split(deadsheet, deadsheet.getWidth()/3,deadsheet.getHeight()/1);
+
+        DeadFrames = new TextureRegion[3];
+        index = 0;
+        for (int i = 0; i < 1; i++) {
+            for (int j = 0; j < 3; j++) {
+                DeadFrames[index++] = temp[i][j];
+            }
+        }
         // Drop the TextureRegions into a new Animation object and set the framerate. As the
         // duration is set to 0.033, we will get 30 frames per second.
         RunningAnimation = new Animation(0.1f, RunFrames);
@@ -155,10 +211,13 @@ public class Gameclass implements Screen {
         SlideAnimation = new Animation(0.33f, Slideframes);
         SlideAnimationend = new Animation(0.1f, Slideframesend);
         SlimeAnimation = new Animation(0.15f, SlimeFrames);
+        DeadAnimation = new Animation(0.15f, DeadFrames);
+
         // Initialise the stateTime, aka how long the program has been running for.
         stateTime = 0.0f;
 
         playerDelta = new Vector2();
+        SlimeDelta = new Vector2();
 
         batch = new SpriteBatch();
 
@@ -176,6 +235,7 @@ public class Gameclass implements Screen {
         camera.setToOrtho(false, w , h  );
 
         velocity = new Vector3(0,0,0);
+
         postion = new Vector3(0,400,0);
 
         stage = new Stage();
@@ -185,17 +245,33 @@ public class Gameclass implements Screen {
         currentstate = State.Running;
 
         playerSprite = new Sprite(currentframe);
-        slimesprite = new Sprite(slimeframe);
+        slimesprite = new Sprite[15];
+
+        int distance = 1250;
+
+        for(int i = 0; i < 15 ;i ++){
+
+            slimesprite[i] = new Sprite(slimeframe);
+            slimesprite[i].setPosition(distance,400);
+            distance+=1250;
+        }
+
         playerSprite.translateY(400);
-        slimesprite.translateY(400);
+
+
         Gdx.input.setInputProcessor(stage);
 
     }
     private void update() {
         playerDelta.x =  MOVEMENT_SPEED * dt;
-
+        SlimeDelta.x = - SLIME_MOVEMENT_SPEED *dt;
         playerSprite.translateX(playerDelta.x);
-        slimesprite.translateX(playerDelta.x);
+
+        for(int i = 0; i < 15 ;i ++)
+        slimesprite[i].translateX(SlimeDelta.x);
+////
+;
+
         camera.position.x += MOVEMENT_SPEED*dt;
 
         velocity.scl(dt);
@@ -204,7 +280,7 @@ public class Gameclass implements Screen {
         playerSprite.setY(postion.y);
 
 
-        if(postion.y > 440)
+        if(postion.y > 450)
         {
             velocity.add(0,gravity,0);
             Timer.schedule(new Timer.Task() { @Override public void run() {  currentstate = State.Jumpend; } },0.15f);
@@ -213,7 +289,7 @@ public class Gameclass implements Screen {
             currentstate = State.Running;
             postion.y = 400;
         }
-        if(letslide){
+        if(letslide && postion.y == 400){
             currentstate = State.Sliding;
             Timer.schedule(new Timer.Task() { @Override public void run() {  currentstate = State.Slidend; } },0.33f);
 
@@ -223,7 +299,7 @@ public class Gameclass implements Screen {
 
         if(Gdx.input.justTouched()){
             if (Gdx.input.getY() < Gdx.graphics.getHeight() / 2){
-                velocity.y = 450;
+                velocity.y = 600;
                 velocity.add(0,gravity,0);
                 currentstate = State.Jumping;
                 jumped = true;
@@ -250,6 +326,9 @@ public class Gameclass implements Screen {
         }
         if(currentstate == State.Slidend){
             currentframe = (TextureRegion) SlideAnimationend.getKeyFrame(stateTime, false);
+        }
+        if(currentstate == State.dead){
+            currentframe = (TextureRegion) DeadAnimation.getKeyFrame(stateTime, false);
         }
 
         return currentframe;
@@ -288,20 +367,23 @@ public class Gameclass implements Screen {
         batch.begin();
 
         batch.draw(currentframe,playerSprite.getX(),playerSprite.getY());
-        int distance =800;
-        for(int i = 0; i < 10; i++){
 
-            batch.draw(slimeframe, distance*5*(i)-slimesprite.getX(),400);
-            if(i%2==0 && i != 0)
-                batch.draw(slimeframe, distance*4*(i),400);
+        for(int i = 0; i < 15 ;i ++) {
 
-            distance +=100;
+            batch.draw(slimeframe, slimesprite[i].getX(), 400);
         }
 
+        for(int i = 0; i < 15 ;i ++) {
+            playerRectangle = new Rectangle(playerSprite.getX(), playerSprite.getY(), playerSprite.getWidth()/1.75f, playerSprite.getHeight()/1.5f);
+
+            slimeRectangle = new Rectangle(slimesprite[i].getX(), slimesprite[i].getY(), slimesprite[i].getWidth()/3f, slimesprite[i].getHeight()/2f);
+
+            if (playerRectangle.overlaps(slimeRectangle) )
+                currentstate = State.dead;
+        }
 
         batch.end();
     }
-
 
     @Override
     public void resize(int width, int height) {

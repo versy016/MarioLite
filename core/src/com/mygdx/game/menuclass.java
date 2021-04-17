@@ -24,9 +24,9 @@ public class menuclass implements Screen {
     private SpriteBatch batch;
     private Stage stage;
     private Skin skin;
-    Button playbutton;
     Image img;
-
+    TextButton playbutton;
+    TextButton exitbutton;
     // constructor to keep a reference to the main Game class
     public menuclass(MyGdxGame game) {
         this.game = game;
@@ -36,11 +36,12 @@ public class menuclass implements Screen {
         stage = new Stage();
         background = new Texture("Starting Assets/assets/background.jpg");
         skin = new Skin(Gdx.files.internal("Starting Assets/assets/uiskin.json"));
-        final TextButton playbutton = new TextButton("Play", skin, "default");
-        final TextButton exitbutton = new TextButton("Exit", skin, "default");
+        playbutton = new TextButton("Play", skin, "default");
+        exitbutton = new TextButton("Exit", skin, "default");
 
         Image img = new Image(background);
         img.setSize(2050,1100);
+
         playbutton.setWidth(600f);
         playbutton.setHeight(100f);
         playbutton.getLabel().setFontScale(5);
