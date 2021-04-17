@@ -40,7 +40,6 @@ public class Gameclass implements Screen {
     }
     public State currentstate;
 
-    public boolean paused;
 
     private OrthographicCamera camera;
     private SpriteBatch batch;                   // Spritebatch for rendering
@@ -83,8 +82,6 @@ public class Gameclass implements Screen {
 
     private float stateTime;                    // The time that the program has been running
 
-    int characterX ;
-    int characterY ;
     public static final float MOVEMENT_SPEED = 400.0f;
     public static final float SLIME_MOVEMENT_SPEED = 300.0f;
 
@@ -95,7 +92,10 @@ public class Gameclass implements Screen {
     public static final int gravity = -20;
     Vector3  velocity;
     Vector3 postion;
+
     boolean jumped = false;
+    boolean tagain;
+    boolean paused;
 
     TextButton tryagain;
     TextButton exit;
@@ -138,11 +138,11 @@ public class Gameclass implements Screen {
         label.setPosition(900,850);
         label.setVisible(false);
 
-        tryagain.setWidth(600f);
+        tryagain.setWidth(500f);
         tryagain.setHeight(120f);
         tryagain.getLabel().setFontScale(5);
         tryagain.setColor(Color.GOLD);
-        tryagain.setPosition(750, 850);
+        tryagain.setPosition(900, 550);
         tryagain.setVisible(false);
 
 
@@ -249,7 +249,7 @@ public class Gameclass implements Screen {
         SlideAnimation = new Animation(0.33f, Slideframes);
         SlideAnimationend = new Animation(0.1f, Slideframesend);
         SlimeAnimation = new Animation(0.15f, SlimeFrames);
-        DeadAnimation = new Animation(0.15f, DeadFrames);
+        DeadAnimation = new Animation(0.5f, DeadFrames);
 
         // Initialise the stateTime, aka how long the program has been running for.
         stateTime = 0.0f;
@@ -259,9 +259,6 @@ public class Gameclass implements Screen {
 
         batch = new SpriteBatch();
 
-        characterX = 1;
-        characterY = 1;
-
         //map
         tiledMap = new TmxMapLoader().load("Starting Assets/assets/level1.tmx");
         tiledMapRenderer = new OrthogonalTiledMapRenderer(tiledMap);
@@ -269,6 +266,7 @@ public class Gameclass implements Screen {
         //Camera
         float w = Gdx.graphics.getWidth();
         float h = Gdx.graphics.getHeight();
+
         camera = new OrthographicCamera();
         camera.setToOrtho(false, w , h  );
 
@@ -285,21 +283,15 @@ public class Gameclass implements Screen {
         playerSprite = new Sprite(currentframe);
         slimesprite = new Sprite[15];
 
-        int distance = 1250;
-
-        for(int i = 0; i < 15 ;i ++){
-
-            slimesprite[i] = new Sprite(slimeframe);
-            slimesprite[i].setPosition(distance,400);
-            distance+=1250;
-        }
-
         playerSprite.translateY(400);
         stage.addActor(img);
         stage.addActor(pause);
         stage.addActor(cntinue);
         stage.addActor(exit);
         stage.addActor(label);
+        stage.addActor(tryagain);
+
+        newGame();
 
         //stage.addActor(exitbutton);
         Gdx.input.setInputProcessor(stage);
@@ -369,6 +361,29 @@ public class Gameclass implements Screen {
                 letslide = true;
             }
         }
+        for(int i = 0; i < 15 ;i ++) {
+            playerRectangle = new Rectangle(playerSprite.getX(), playerSprite.getY(), playerSprite.getWidth()/1.75f, playerSprite.getHeight()/1.5f);
+
+            slimeRectangle = new Rectangle(slimesprite[i].getX(), slimesprite[i].getY(), slimesprite[i].getWidth()/3f, slimesprite[i].getHeight()/2f);
+
+            if (playerRectangle.overlaps(slimeRectangle) ){
+                currentstate = State.dead;
+                Timer.schedule(new Timer.Task() { @Override public void run() {   tagain = true; } },0.25f);
+
+
+                tryagain.setVisible(true);
+                pause.setVisible(false);
+                break;
+            }
+        }
+        tryagain.addListener(new ChangeListener() {
+            public void changed (ChangeEvent event, Actor actor) {
+                tagain = false;
+                tryagain.setVisible(false);
+                pause.setVisible(true);
+                newGame();
+
+            }});
 
     }
     public TextureRegion getcurrentstate(){
@@ -412,9 +427,8 @@ public class Gameclass implements Screen {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA); //Allows transparent sprites/tiles
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-       if(!paused) {
+       if(!paused && !tagain) {
            update();
-
 
            camera.update();
        }
@@ -431,6 +445,7 @@ public class Gameclass implements Screen {
             }
         });
         }
+
         // Increase the time the game has been running by adding deltaTime (the time since the
         // last update).
         stateTime += Gdx.graphics.getDeltaTime();
@@ -451,17 +466,28 @@ public class Gameclass implements Screen {
             batch.draw(slimeframe, slimesprite[i].getX(), 400);
         }
 
-        for(int i = 0; i < 15 ;i ++) {
-            playerRectangle = new Rectangle(playerSprite.getX(), playerSprite.getY(), playerSprite.getWidth()/1.75f, playerSprite.getHeight()/1.5f);
 
-            slimeRectangle = new Rectangle(slimesprite[i].getX(), slimesprite[i].getY(), slimesprite[i].getWidth()/3f, slimesprite[i].getHeight()/2f);
-
-            if (playerRectangle.overlaps(slimeRectangle) )
-                currentstate = State.dead;
-        }
         batch.end();
     }
 
+    private void newGame() {
+        camera.position.x = 1000;
+        camera.position.y = 100;
+
+        camera.translate(playerSprite.getX(), playerSprite.getY());
+
+        int distance = 1500;
+
+        for(int i = 0; i < 15 ;i ++){
+
+            slimesprite[i] = new Sprite(slimeframe);
+            slimesprite[i].setPosition(distance,400);
+            distance+=1500;
+        }
+
+        playerSprite.setPosition(0,400);
+        dt = 0.0f;
+    }
     @Override
     public void resize(int width, int height) {
 
