@@ -13,6 +13,7 @@ import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 
 public class MyGdxGame extends Game implements ApplicationListener {
 	SpriteBatch batch;
+
 	Texture img;
 	// The class with the menu
 	public static menuclass mclass;
@@ -23,8 +24,6 @@ public class MyGdxGame extends Game implements ApplicationListener {
 		Gdx.app.log("MyGdxGame: "," create");
 		mclass = new menuclass(this);
 		gclass = new Gameclass(this);
-		Gdx.app.log("MyGdxGame: ","about to change screen to menuScreen");
-
 		setScreen(mclass);
 	}
 

@@ -3,6 +3,7 @@ package com.mygdx.game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
@@ -26,6 +27,7 @@ public class menuclass implements Screen {
     private Skin skin;
     Image img;
     TextButton playbutton;
+    Sound btnsound;
     TextButton exitbutton;
     // constructor to keep a reference to the main Game class
     public menuclass(MyGdxGame game) {
@@ -38,6 +40,7 @@ public class menuclass implements Screen {
         skin = new Skin(Gdx.files.internal("Starting Assets/assets/uiskin.json"));
         playbutton = new TextButton("Play", skin, "default");
         exitbutton = new TextButton("Exit", skin, "default");
+        btnsound = Gdx.audio.newSound(Gdx.files.internal("Starting Assets/assets/buttonsound.wav"));
 
         img = new Image(background);
         img.setSize(2050,1100);
@@ -60,8 +63,9 @@ public class menuclass implements Screen {
             @Override
             public void clicked (InputEvent event, float x, float y)
             {
+                btnsound.play(1.0f);
                 game.setScreen(MyGdxGame.gclass);
-                dispose();
+//                dispose();
             }
         });
 
@@ -71,6 +75,8 @@ public class menuclass implements Screen {
             public void clicked (InputEvent event, float x, float y)
             {
                 Gdx.app.exit();
+                btnsound.play(1.0f);
+
             }
         });
         stage.addActor(img);
@@ -119,5 +125,7 @@ public class menuclass implements Screen {
     @Override
     public void dispose() {
         background.dispose();
+        skin.dispose();
+        btnsound.dispose();
     }
 }
